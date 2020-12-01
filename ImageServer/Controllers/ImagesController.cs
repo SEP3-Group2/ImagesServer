@@ -17,7 +17,7 @@ namespace ImageServer.Controllers
     {
         private readonly IHostEnvironment environment;
 
-        string[] legalExtensions = { ".jpg", ".png", ".gif", ".bmp" };
+        string[] legalExtensions = { ".jpg",".jpeg", ".png", ".gif", ".bmp" };
 
 
         public ImagesController(IHostEnvironment environment)
