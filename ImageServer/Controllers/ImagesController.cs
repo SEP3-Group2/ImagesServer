@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
+using ImageServer.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Hosting;
@@ -15,47 +17,72 @@ namespace ImageServer.Controllers
     {
         private readonly IHostEnvironment environment;
 
+        string[] legalExtensions = { ".jpg", ".png", ".gif", ".bmp" };
+
+
         public ImagesController(IHostEnvironment environment)
         {
             this.environment = environment;
         }
 
         [HttpPost]
-        public async Task<IActionResult> Post([FromForm] IFormFile image, [FromForm] int id)
+        public async Task<IActionResult> Post([FromBody] SaveFile saveFile)
         {
             Console.WriteLine("Received image upload request");
-            if(image == null || image.Length == 0 || (id < 0))
+
+            if (saveFile.Files == null || (saveFile.ProductID < 0))
             {
+                Console.WriteLine("Bad request");
                 return BadRequest("Upload an image");
             }
 
-            string fileName = image.FileName;
-            string extension = Path.GetExtension(fileName);
-
-            string[] legalExtensions = { ".jpg", ".png", ".gif", ".bmp" };
-
-
-            if (!legalExtensions.Contains(extension))
+            Console.WriteLine("Starting loop");
+            
+            foreach (var file in saveFile.Files)
             {
-                return BadRequest("Image must be .jpg, .png, .gif or .bmp");
-            }
+                Console.WriteLine("Loop begin");
+                string fileExtension = file.FileType.ToLower();
 
-            Console.WriteLine($"Checking path: {environment.ContentRootPath}\\wwwroot\\images\\{id}");
-            if (!Directory.Exists($"{environment.ContentRootPath}\\wwwroot\\images\\{id}"))
-            {
-                Console.WriteLine($"Creating new directory at: {environment.ContentRootPath}\\wwwroot\\images\\{id}");
-                Directory.CreateDirectory($"{environment.ContentRootPath}\\wwwroot\\images\\{id}");
-            }
+                Console.WriteLine("Checking file extension");
+                if (!legalExtensions.Contains(fileExtension))
+                {
+                    Console.WriteLine($"Wrong fileextension: {fileExtension}");
+                    return BadRequest("Image must be .jpg, .png, .gif or .bmp");
+                }
 
-            string newFileName = $"{Guid.NewGuid()}{extension}";
-            string filePath = Path.Combine(environment.ContentRootPath, "wwwroot", $"images/{id}", newFileName);
+                Console.WriteLine("Checking directory");
+                if (!Directory.Exists($"{environment.ContentRootPath}\\wwwroot\\images\\{saveFile.ProductID}"))
+                {
+                    Console.WriteLine($"Creating new directory at: {environment.ContentRootPath}\\wwwroot\\images\\{saveFile.ProductID}");
+                    Directory.CreateDirectory($"{environment.ContentRootPath}\\wwwroot\\images\\{saveFile.ProductID}");
+                }
+                else
+                {
+                    Console.WriteLine("Directory exists");
+                }
 
-            using(var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write))
-            {
-                await image.CopyToAsync(fileStream);
+                Console.WriteLine("Creating filename");
+                string newFileName = $"{Guid.NewGuid()}{fileExtension}";
+                Console.WriteLine("Creating path");
+                string filePath = Path.Combine(environment.ContentRootPath, "wwwroot", $"images/{saveFile.ProductID}", newFileName);
+
+                Console.WriteLine("Doing filestream stuff");
+                using (var fileStream = System.IO.File.Create(filePath))
+                {
+                    Console.WriteLine("Writing filestream");
+                    await fileStream.WriteAsync(file.Data);
+                }
             }
+            Console.WriteLine("Success");
 
             return Ok($"Image has been uploaded");
+        }
+
+        [HttpGet]
+        public async Task<string> GetImage()
+        {
+            Console.WriteLine("returning");
+            return "Yo dawg";
         }
     }
 }

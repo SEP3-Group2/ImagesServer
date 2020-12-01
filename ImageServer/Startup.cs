@@ -45,6 +45,8 @@ namespace ImageServer
 
             app.UseRouting();
 
+            app.UseCors("CorsPolicy");
+
             app.UseStaticFiles();
 
             app.UseAuthorization();
