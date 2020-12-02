@@ -170,7 +170,7 @@ namespace ImageServer.Controllers
                     Size = imageFileStream.Length
                 });
 
-                if (fileNames.Length > 2)
+                if (fileNames.Length >= 2)
                 {
                     file = fileNames[1];
                     fullPath = filePath + $"\\{file}";
