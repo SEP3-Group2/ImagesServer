@@ -18,7 +18,7 @@ namespace ImageServer.Controllers
     {
         private readonly IHostEnvironment environment;
 
-        string[] legalExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".bmp" };
+        string[] legalExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" };
 
 
         public ImagesController(IHostEnvironment environment)
@@ -52,7 +52,7 @@ namespace ImageServer.Controllers
                 if (!legalExtensions.Contains(fileExtension))
                 {
                     Console.WriteLine($"Wrong fileextension: {fileExtension}");
-                    return BadRequest("Image must be .jpg, .jpeg .png, .gif or .bmp");
+                    return BadRequest("Image must be .jpg, .jpeg .png, .gif, .webp or .bmp");
                 }
 
                 if (!Directory.Exists($"{environment.ContentRootPath}\\wwwroot\\images\\{saveFile.ProductID}"))
