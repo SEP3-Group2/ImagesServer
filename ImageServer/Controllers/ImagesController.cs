@@ -77,22 +77,35 @@ namespace ImageServer.Controllers
         [HttpGet]
         public async Task<ActionResult<SaveFile>> GetImages([FromQuery] string quantity, [FromQuery] int productID)
         {
-            Console.WriteLine("Getting images...");
+
+
+            Console.WriteLine($"Getting images from {productID}...");
             string filePath = $"{environment.ContentRootPath}\\wwwroot\\images\\{productID}";
 
+            Console.WriteLine($"Checking path {filePath}");
             if (!Directory.Exists(filePath))
             {
-                return BadRequest($"Directory does not exist for product {productID}");
+                Console.WriteLine($"Creating directory {filePath}");
+                Directory.CreateDirectory(filePath);
+                //return BadRequest($"Directory does not exist for product {productID}");
             }
 
             List<FileData> fileData = new List<FileData>();
             string[] fileNames = Directory.GetFiles(filePath);
 
-            if(fileNames.Length == 0)
+            if (fileNames.Length == 0)
             {
-                return BadRequest($"No images found for product {productID}");
+                Console.WriteLine("Found no files, sending empty SaveFile");
+                SaveFile file = new SaveFile
+                {
+                    Files = fileData,
+                    ProductID = productID
+                };
+                return file;
+                //return BadRequest($"No images found for product {productID}");
             }
 
+            Console.WriteLine($"Found {fileNames.Length} files");
             List<string> files = new List<string>();
             foreach (var file in fileNames)
             {
@@ -103,6 +116,7 @@ namespace ImageServer.Controllers
 
             if (quantity.Equals("all"))
             {
+                int fileNo = 1;
                 foreach (var file in fileNames)
                 {
                     string fullPath = filePath + $"\\{file}";
@@ -111,13 +125,16 @@ namespace ImageServer.Controllers
                     var buffer = new byte[imageFileStream.Length];
                     await imageFileStream.ReadAsync(buffer);
 
+                    Console.WriteLine($"Packaging file {fileNo}");
                     fileData.Add(new FileData
                     {
                         Data = buffer,
                         FileType = Path.GetExtension(fullPath),
                         Size = imageFileStream.Length
                     });
+                    fileNo++;
                 }
+                Console.WriteLine($"Finished packing {fileNo} files");
             }
             else if (quantity.Equals("first"))
             {
@@ -136,6 +153,41 @@ namespace ImageServer.Controllers
                     Size = imageFileStream.Length
                 });
             }
+            else if (quantity.Equals("two"))
+            {
+                string file = fileNames[0];
+                string fullPath = filePath + $"\\{file}";
+                Console.WriteLine($"Fullpath: {fullPath}");
+
+                var imageFileStream = System.IO.File.OpenRead(fullPath);
+                var buffer = new byte[imageFileStream.Length];
+                await imageFileStream.ReadAsync(buffer);
+
+                fileData.Add(new FileData
+                {
+                    Data = buffer,
+                    FileType = Path.GetExtension(fullPath),
+                    Size = imageFileStream.Length
+                });
+
+                if (fileNames.Length >= 2)
+                {
+                    file = fileNames[1];
+                    fullPath = filePath + $"\\{file}";
+                    Console.WriteLine($"Fullpath: {fullPath}");
+
+                    imageFileStream = System.IO.File.OpenRead(fullPath);
+                    buffer = new byte[imageFileStream.Length];
+                    await imageFileStream.ReadAsync(buffer);
+
+                    fileData.Add(new FileData
+                    {
+                        Data = buffer,
+                        FileType = Path.GetExtension(fullPath),
+                        Size = imageFileStream.Length
+                    });
+                }
+            }
 
             SaveFile returnFile = new SaveFile
             {
@@ -143,6 +195,7 @@ namespace ImageServer.Controllers
                 ProductID = productID
             };
 
+            Console.WriteLine($"Sending {returnFile.Files.Count} files");
             return Ok(returnFile);
         }
     }
