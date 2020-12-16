@@ -38,8 +38,6 @@ namespace ImageServer.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Post([FromBody] SaveFile saveFile)
         {
-            Console.WriteLine("Received image upload request");
-
             if (saveFile.Files == null || (saveFile.ProductID < 0))
             {
                 return BadRequest("Upload an image");
@@ -51,13 +49,11 @@ namespace ImageServer.Controllers
 
                 if (!legalExtensions.Contains(fileExtension))
                 {
-                    Console.WriteLine($"Wrong fileextension: {fileExtension}");
                     return BadRequest("Image must be .jpg, .jpeg .png, .gif, .webp or .bmp");
                 }
 
                 if (!Directory.Exists($"{environment.ContentRootPath}\\wwwroot\\images\\{saveFile.ProductID}"))
                 {
-                    Console.WriteLine($"Creating new directory at: {environment.ContentRootPath}\\wwwroot\\images\\{saveFile.ProductID}");
                     Directory.CreateDirectory($"{environment.ContentRootPath}\\wwwroot\\images\\{saveFile.ProductID}");
                 }
 
@@ -69,7 +65,6 @@ namespace ImageServer.Controllers
                     await fileStream.WriteAsync(file.Data);
                 }
             }
-            Console.WriteLine($"Success! {saveFile.Files.Count} images uploaded");
 
             return Ok($"Image has been uploaded");
         }
@@ -77,17 +72,11 @@ namespace ImageServer.Controllers
         [HttpGet]
         public async Task<ActionResult<SaveFile>> GetImages([FromQuery] string quantity, [FromQuery] int productID)
         {
-
-
-            Console.WriteLine($"Getting images from {productID}...");
             string filePath = $"{environment.ContentRootPath}\\wwwroot\\images\\{productID}";
 
-            Console.WriteLine($"Checking path {filePath}");
             if (!Directory.Exists(filePath))
             {
-                Console.WriteLine($"Creating directory {filePath}");
                 Directory.CreateDirectory(filePath);
-                //return BadRequest($"Directory does not exist for product {productID}");
             }
 
             List<FileData> fileData = new List<FileData>();
@@ -95,17 +84,14 @@ namespace ImageServer.Controllers
 
             if (fileNames.Length == 0)
             {
-                Console.WriteLine("Found no files, sending empty SaveFile");
                 SaveFile file = new SaveFile
                 {
                     Files = fileData,
                     ProductID = productID
                 };
                 return file;
-                //return BadRequest($"No images found for product {productID}");
             }
 
-            Console.WriteLine($"Found {fileNames.Length} files");
             List<string> files = new List<string>();
             foreach (var file in fileNames)
             {
@@ -125,7 +111,6 @@ namespace ImageServer.Controllers
                     var buffer = new byte[imageFileStream.Length];
                     await imageFileStream.ReadAsync(buffer);
 
-                    Console.WriteLine($"Packaging file {fileNo}");
                     fileData.Add(new FileData
                     {
                         Data = buffer,
@@ -134,13 +119,11 @@ namespace ImageServer.Controllers
                     });
                     fileNo++;
                 }
-                Console.WriteLine($"Finished packing {fileNo} files");
             }
             else if (quantity.Equals("first"))
             {
                 string file = fileNames[0];
                 string fullPath = filePath + $"\\{file}";
-                Console.WriteLine($"Fullpath: {fullPath}");
 
                 var imageFileStream = System.IO.File.OpenRead(fullPath);
                 var buffer = new byte[imageFileStream.Length];
@@ -157,7 +140,6 @@ namespace ImageServer.Controllers
             {
                 string file = fileNames[0];
                 string fullPath = filePath + $"\\{file}";
-                Console.WriteLine($"Fullpath: {fullPath}");
 
                 var imageFileStream = System.IO.File.OpenRead(fullPath);
                 var buffer = new byte[imageFileStream.Length];
@@ -174,7 +156,6 @@ namespace ImageServer.Controllers
                 {
                     file = fileNames[1];
                     fullPath = filePath + $"\\{file}";
-                    Console.WriteLine($"Fullpath: {fullPath}");
 
                     imageFileStream = System.IO.File.OpenRead(fullPath);
                     buffer = new byte[imageFileStream.Length];
@@ -194,8 +175,6 @@ namespace ImageServer.Controllers
                 Files = fileData,
                 ProductID = productID
             };
-
-            Console.WriteLine($"Sending {returnFile.Files.Count} files");
             return Ok(returnFile);
         }
     }
